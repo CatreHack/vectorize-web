@@ -377,6 +377,123 @@ h1 {
   flex-wrap: wrap;
 }
 
+/* ---------------------------------------------------------------------------
+   Selector de modo
+   --------------------------------------------------------------------------- */
+.modos {
+  width: 100%;
+  max-width: 720px;
+  margin-bottom: 18px;
+}
+
+.modos-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--dim);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.modos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.modo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  background: transparent;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  transition: border-color 0.16s, background 0.16s, transform 0.16s;
+}
+
+.modo-card:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.modo-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modo-card--active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.modo-icono {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.modo-etiqueta {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.modo-descripcion {
+  font-size: 0.7rem;
+  color: var(--dim);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.modos-detalle {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--dim);
+  min-height: 1.2em;
+}
+
+/* Etiqueta que indica en qué modo se convirtió */
+.result-modo {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-bottom: 14px;
+}
+
+/* Avisos no fatales del backend */
+.aviso {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid #d8a12a;
+  border-radius: 8px;
+  background: rgba(216, 161, 42, 0.12);
+  font-size: 0.8rem;
+}
+
+.aviso p {
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .modos-grid {
+    grid-template-columns: 1fr;
+  }
+  .modo-card {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    text-align: left;
+  }
+  .modo-descripcion {
+    text-align: left;
+  }
+}
+
 /* Etiqueta de version: permite verificar de un vistazo si el navegador
    esta mostrando la ultima build o una copia vieja en cache. */
 .build-tag {

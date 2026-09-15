@@ -27,12 +27,40 @@ function b64ToUtf8(b64) {
   return new TextDecoder('utf-8').decode(bytes)
 }
 
+// Modos de conversion. Cada uno aplica un motor y una calidad distinta
+// segun el tipo de imagen. Deben coincidir con los presets del backend
+// (app/config.py -> MODOS).
+const MODOS = [
+  {
+    id: 'foto',
+    icono: '📷',
+    etiqueta: 'Foto',
+    descripcion: 'Fotos y retratos',
+    detalle: 'Conserva todo el detalle y el fondo. No lo recorta.',
+  },
+  {
+    id: 'logo',
+    icono: '🎨',
+    etiqueta: 'Logo',
+    descripcion: 'Logos y marcas',
+    detalle: 'Quita el fondo y deja curvas limpias.',
+  },
+  {
+    id: 'dibujo',
+    icono: '✏️',
+    etiqueta: 'Dibujo',
+    descripcion: 'Ilustraciones y line art',
+    detalle: 'Trazos nítidos con el fondo limpio.',
+  },
+]
+
 export default function App() {
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [status, setStatus] = useState('idle') // idle | dragging | converting | done | error
-  const [result, setResult] = useState(null) // { svgText, pngUrl, jobId }
+  const [result, setResult] = useState(null) // { svgText, pngUrl, jobId, modo, fondoRemovido, avisos }
   const [errorMsg, setErrorMsg] = useState('')
+  const [modo, setModo] = useState('foto')
   const inputRef = useRef(null)
 
   const reset = useCallback(() => {
@@ -73,6 +101,7 @@ export default function App() {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('mode', modo)
       const res = await fetch(`${API_BASE}/convert`, {
         method: 'POST',
         body: formData,
@@ -111,13 +140,22 @@ export default function App() {
       if (!svgText.includes('<svg')) {
         throw new Error('El servidor devolvio un SVG vacio.')
       }
-      setResult({ svgText, pngUrl, jobId: data.job_id })
+      setResult({
+        svgText,
+        pngUrl,
+        jobId: data.job_id,
+        // El backend confirma que modo aplico de verdad (puede normalizar
+        // alias) y si el fondo se quito o no.
+        modo: data.modo || modo,
+        fondoRemovido: !!data.fondo_removido,
+        avisos: data.avisos || [],
+      })
       setStatus('done')
     } catch (err) {
       setErrorMsg(err.message || 'Ocurrió un error inesperado.')
       setStatus('error')
     }
-  }, [file])
+  }, [file, modo])
 
   // Nombre base del archivo original, sin extension, para reusarlo al descargar.
   const baseName = (file?.name || 'resultado').replace(/\.[^.]+$/, '')
@@ -158,11 +196,38 @@ export default function App() {
 
       <main className="content">
         <div className="intro">
-          <p className="eyebrow">logos · firmas · dibujos · gráficos simples</p>
+          <p className="eyebrow">logos · firmas · dibujos · fotografías</p>
           <h1>Convertí tu imagen en un vector limpio</h1>
           <p className="lede">
-            Subí un JPG o PNG. Recibís un SVG editable y un PNG con fondo
-            transparente, listos para usar.
+            Subí un JPG o PNG, elegí el modo según tu imagen y recibí un SVG
+            editable. En logos y dibujos también te damos el PNG sin fondo.
+          </p>
+        </div>
+
+        {/* Selector de modo: define si se quita el fondo y cuánto detalle
+            se conserva. Va arriba para elegirlo antes de convertir. */}
+        <div className="modos">
+          <p className="modos-label">¿Qué tipo de imagen vas a convertir?</p>
+          <div className="modos-grid">
+            {MODOS.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={`modo-card ${modo === m.id ? 'modo-card--active' : ''}`}
+                onClick={() => setModo(m.id)}
+                aria-pressed={modo === m.id}
+                disabled={status === 'converting'}
+              >
+                <span className="modo-icono" aria-hidden="true">
+                  {m.icono}
+                </span>
+                <span className="modo-etiqueta">{m.etiqueta}</span>
+                <span className="modo-descripcion">{m.descripcion}</span>
+              </button>
+            ))}
+          </div>
+          <p className="modos-detalle">
+            {MODOS.find((m) => m.id === modo)?.detalle}
           </p>
         </div>
 
@@ -243,6 +308,26 @@ export default function App() {
 
         {result && (
           <div className="result">
+            {/* Avisos no fatales del backend (p. ej. si la IA no estaba
+                disponible y se usó el método clásico). */}
+            {result.avisos?.length > 0 && (
+              <div className="aviso">
+                {result.avisos.map((a, i) => (
+                  <p key={i}>⚠️ {a}</p>
+                ))}
+              </div>
+            )}
+
+            <p className="result-modo">
+              Convertido en modo{' '}
+              <strong>
+                {MODOS.find((m) => m.id === result.modo)?.etiqueta || result.modo}
+              </strong>
+              {result.fondoRemovido
+                ? ' · fondo quitado automáticamente'
+                : ' · imagen completa, sin recortar'}
+            </p>
+
             <div className="result-grid">
               <div className="result-panel">
                 <p className="panel-label">Original</p>
@@ -250,12 +335,19 @@ export default function App() {
                   <img src={previewUrl} alt="Imagen original" />
                 </div>
               </div>
-              <div className="result-panel">
-                <p className="panel-label">PNG transparente</p>
-                <div className="panel-frame checker">
-                  <img src={result.pngUrl} alt="PNG con fondo transparente" />
+
+              {/* El PNG transparente solo tiene sentido cuando se quitó el
+                  fondo. En modo foto no aplica: mostrar una copia idéntica
+                  del original confundiría. */}
+              {result.fondoRemovido && (
+                <div className="result-panel">
+                  <p className="panel-label">PNG transparente</p>
+                  <div className="panel-frame checker">
+                    <img src={result.pngUrl} alt="PNG con fondo transparente" />
+                  </div>
                 </div>
-              </div>
+              )}
+
               <div className="result-panel">
                 <p className="panel-label">SVG vectorial</p>
                 <div
@@ -271,9 +363,11 @@ export default function App() {
                 <button className="btn btn-primary" onClick={downloadSvg}>
                   ⬇ Descargar SVG (vector)
                 </button>
-                <button className="btn btn-secondary" onClick={downloadPng}>
-                  ⬇ Descargar PNG (transparente)
-                </button>
+                {result.fondoRemovido && (
+                  <button className="btn btn-secondary" onClick={downloadPng}>
+                    ⬇ Descargar PNG (transparente)
+                  </button>
+                )}
                 <button className="btn btn-ghost" onClick={reset}>
                   Convertir otra imagen
                 </button>
@@ -285,7 +379,7 @@ export default function App() {
 
       <footer className="footer">
         <span>Traza · vectorización de imágenes · SVG + PNG transparente</span>
-        <span className="build-tag">v3</span>
+        <span className="build-tag">v4</span>
       </footer>
     </div>
   )
