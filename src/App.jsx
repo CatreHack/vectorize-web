@@ -76,10 +76,34 @@ export default function App() {
       const res = await fetch(`${API_BASE}/convert`, {
         method: 'POST',
         body: formData,
+        cache: 'no-store',
       })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.detail || 'No se pudo procesar la imagen.')
+        // Mensajes en español y accionables segun el codigo HTTP real.
+        // Un 404 "Not Found" casi siempre significa que la app es una version
+        // vieja en cache con la URL del backend mal armada.
+        let detalle = ''
+        try {
+          const body = await res.json()
+          detalle = body?.detail || ''
+        } catch {
+          // El backend devolvio algo que no es JSON (p.ej. "Not Found" plano).
+          detalle = await res.text().catch(() => '')
+        }
+        const mensajes = {
+          404: 'No se encontró el servicio. Cerrá esta pestaña y volvé a abrir la página (puede ser una versión vieja en caché).',
+          413: 'La imagen es demasiado grande. El máximo es 10 MB.',
+          415: 'Formato no soportado. Usá JPG, PNG o WEBP.',
+          422: 'El archivo no parece ser una imagen válida.',
+          500: 'El servidor tuvo un error interno. Probá de nuevo en unos segundos.',
+          502: 'El servidor está despertando. Esperá 30 segundos y probá otra vez.',
+          503: 'El servidor está iniciando. Esperá 30 segundos y probá otra vez.',
+          504: 'El servidor tardó demasiado. Esperá un momento y reintentá.',
+        }
+        throw new Error(
+          mensajes[res.status] ||
+          `Error ${res.status}${detalle ? `: ${detalle}` : ''}`
+        )
       }
       const data = await res.json()
       const svgText = b64ToUtf8(data.svg_base64)
@@ -261,6 +285,7 @@ export default function App() {
 
       <footer className="footer">
         <span>Traza · vectorización de imágenes · SVG + PNG transparente</span>
+        <span className="build-tag">v3</span>
       </footer>
     </div>
   )

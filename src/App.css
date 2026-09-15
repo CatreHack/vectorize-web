@@ -370,4 +370,19 @@ h1 {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Etiqueta de version: permite verificar de un vistazo si el navegador
+   esta mostrando la ultima build o una copia vieja en cache. */
+.build-tag {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  opacity: 0.7;
 }
