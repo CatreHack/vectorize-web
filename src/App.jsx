@@ -1,8 +1,16 @@
 import { useState, useCallback, useRef } from 'react'
 
-// URL del backend. En desarrollo el proxy de Vite manda /api a localhost:8000.
-// En produccion se define VITE_API_BASE al hacer el build (ver deploy).
-const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+// URL base del backend, sin barra final y SIEMPRE terminada en /api.
+// Esto permite definir VITE_API_BASE con o sin el sufijo /api sin romper nada:
+//   VITE_API_BASE=https://mi-api.onrender.com
+//   VITE_API_BASE=https://mi-api.onrender.com/api
+// Ambas formas dan el mismo resultado correcto.
+function normalizeApiBase(raw) {
+  const value = (raw || '/api').trim().replace(/\/+$/, '')
+  return value.endsWith('/api') ? value : `${value}/api`
+}
+
+const API_BASE = normalizeApiBase(import.meta.env.VITE_API_BASE)
 
 function bytesToSize(bytes) {
   if (bytes < 1024) return `${bytes} B`
