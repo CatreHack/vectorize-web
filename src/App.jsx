@@ -95,20 +95,23 @@ export default function App() {
     }
   }, [file])
 
+  // Nombre base del archivo original, sin extension, para reusarlo al descargar.
+  const baseName = (file?.name || 'resultado').replace(/\.[^.]+$/, '')
+
   const downloadSvg = () => {
     const blob = new Blob([result.svgText], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'resultado.svg'
+    a.download = `${baseName}.svg`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   const downloadPng = () => {
     const a = document.createElement('a')
     a.href = result.pngUrl
-    a.download = 'resultado.png'
+    a.download = `${baseName}.png`
     a.click()
   }
 
@@ -238,23 +241,26 @@ export default function App() {
               </div>
             </div>
 
-            <div className="actions">
-              <button className="btn btn-ghost" onClick={reset}>
-                Convertir otra imagen
-              </button>
-              <button className="btn btn-secondary" onClick={downloadPng}>
-                Descargar PNG
-              </button>
-              <button className="btn btn-primary" onClick={downloadSvg}>
-                Descargar SVG
-              </button>
+            <div className="download-block">
+              <p className="download-label">Descargá tu resultado</p>
+              <div className="actions">
+                <button className="btn btn-primary" onClick={downloadSvg}>
+                  ⬇ Descargar SVG (vector)
+                </button>
+                <button className="btn btn-secondary" onClick={downloadPng}>
+                  ⬇ Descargar PNG (transparente)
+                </button>
+                <button className="btn btn-ghost" onClick={reset}>
+                  Convertir otra imagen
+                </button>
+              </div>
             </div>
           </div>
         )}
       </main>
 
       <footer className="footer">
-        <span>MVP de validación · procesamiento local</span>
+        <span>Traza · vectorización de imágenes · SVG + PNG transparente</span>
       </footer>
     </div>
   )

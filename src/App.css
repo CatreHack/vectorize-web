@@ -204,6 +204,41 @@ h1 {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* Bloque de descarga: se separa visualmente de los paneles de resultado */
+.download-block {
+  margin-top: 26px;
+  padding: 18px;
+  border: 1px solid var(--border, #ddd7c8);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.download-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6b6b;
+}
+
+.download-block .actions {
+  margin-top: 14px;
+  justify-content: flex-start;
+}
+
+/* En pantallas angostas los botones ocupan todo el ancho (mejor en celular) */
+@media (max-width: 520px) {
+  .download-block .actions {
+    flex-direction: column;
+  }
+  .download-block .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .btn {
